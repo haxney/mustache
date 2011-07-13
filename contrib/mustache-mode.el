@@ -108,7 +108,7 @@
     '("BI_NEWLINE" "BI_SPACE")
     t)
    "\s*\\>}}\\)"))
-(defconst mustache-mode-close-section-at-start (concat "^[ \t]*?"
+(defconst mustache-mode-close-section-at-start (concat "^\s*?"
                                                   mustache-mode-close-section))
 
 ;; Constant regular expressions to identify html tags.
@@ -145,10 +145,10 @@
 (defconst mustache-mode-close-tag (concat "</\\("
                                      mustache-mode-pair-tag
                                      "\\)>"))
-(defconst mustache-mode-close-tag-at-start (concat "^[ \t]*?"
+(defconst mustache-mode-close-tag-at-start (concat "^\s*?"
                                               mustache-mode-close-tag))
 
-(defconst mustache-mode-blank-line "^[ \t]*?$")
+(defconst mustache-mode-blank-line "^\s*?$")
 (defconst mustache-mode-dangling-open (concat "\\("
                                          mustache-mode-open-section
                                          "\\)\\|\\("
@@ -214,9 +214,9 @@
           (close-at-start) (open-token) (dangling-open))
       (progn
         ;; Determine if this is a template line or an html line.
-        (if (looking-at "^[ \t]*?{{")
+        (if (looking-at "^\s*?{{")
             (setq close-at-start mustache-mode-close-section-at-start
-                  open-token "{{#")
+                  open-token "{{#?")
           (setq close-at-start mustache-mode-close-tag-at-start
                 open-token "<"))
         ;; If there is a closing tag at the start of the line, search back
