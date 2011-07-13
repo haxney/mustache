@@ -4,7 +4,7 @@
 ;;       Chris Wanstrath
 ;;       Daniel Hackney
 
-;; Version: 1.2
+;; Version: 1.3
 
 ;; This file is not part of Emacs
 
@@ -35,6 +35,10 @@
 ;; While the Mustache language can be used for any types of text,
 ;; this mode is intended for using Mustache to write HTML.
 
+;; As of version 1.3, this library also works with the handlebars.js template
+;; language. Handlebars is a strict superset of Mustache, so all mustache
+;; features remain intact.
+
 ;;; Known Bugs:
 
 ;; The indentation still has minor bugs due to the fact that
@@ -47,7 +51,7 @@
 (eval-when-compile
   (require 'font-lock))
 
-(defvar mustache-mode-version "1.2"
+(defvar mustache-mode-version "1.3"
   "Version of `mustache-mode.el'.")
 
 (defvar mustache-mode-map
@@ -73,7 +77,10 @@
   "The basic indentation offset.")
 
 ;; Constant regular expressions to identify template elements.
-(defconst mustache-mode-mustache-token "[a-zA-Z_.][a-zA-Z0-9_:=\?!.-]*?")
+(defconst mustache-mode-mustache-token "[[:alpha:]_./][[:alnum:]_:\?!./-]*")
+(defconst mustache-mode-name-re "\\([[:alpha:]][[:alnum:].]*\\)")
+(defconst mustache-mode-argument-pair (concat mustache-mode-name-re "\\(?:=\\(\"[^\"]*\"\\)\\)?"))
+
 (defconst mustache-mode-section (concat "\\({{[#^/]\s*"
                                    mustache-mode-mustache-token
                                    "\s*}}\\)"))
@@ -144,6 +151,26 @@
                                          "\\)\\|\\("
                                          mustache-mode-open-tag
                                          "\\)[^/]*$"))
+
+(defconst mustache-mode-font-lock-keywords
+  `((,(concat "{{[#^/]?\s*" mustache-mode-mustache-token)
+     ,mustache-mode-argument-pair
+     (let* ((pos (point))
+            (limit (re-search-forward "}}"))
+            (end-pos (match-beginning 0)))
+       (goto-char pos)
+       end-pos)
+     "}}"
+     (1 font-lock-builtin-face)
+     (2 font-lock-string-face nil t))
+    (,mustache-mode-section (1 font-lock-keyword-face))
+    (,mustache-mode-comment (1 font-lock-comment-face))
+    (,mustache-mode-include (1 font-lock-function-name-face))
+    (,mustache-mode-builtins (1 font-lock-variable-name-face))
+    (,mustache-mode-variable (1 font-lock-reference-face))
+    (,(concat "</?\\(" mustache-mode-pair-tag "\\)") (1 font-lock-function-name-face))
+    (,(concat "<\\(" mustache-mode-standalone-tag "\\)") (1 font-lock-function-name-face))
+    (,mustache-mode-html-constant (1 font-lock-variable-name-face))))
 
 (defun mustache-insert-tag (tag)
   "Inserts an HTML tag."
@@ -225,16 +252,6 @@
         (if (> cur-indent 0)
             (indent-line-to cur-indent)
           (indent-line-to 0))))))
-
-(defconst mustache-mode-font-lock-keywords
-  `((,mustache-mode-section (1 font-lock-keyword-face))
-    (,mustache-mode-comment (1 font-lock-comment-face))
-    (,mustache-mode-include (1 font-lock-function-name-face))
-    (,mustache-mode-builtins (1 font-lock-variable-name-face))
-    (,mustache-mode-variable (1 font-lock-reference-face))
-    (,(concat "</?\\(" mustache-mode-pair-tag "\\)") (1 font-lock-function-name-face))
-    (,(concat "<\\(" mustache-mode-standalone-tag "\\)") (1 font-lock-function-name-face))
-    (,mustache-mode-html-constant (1 font-lock-variable-name-face))))
 
 ;;;###autoload
 (define-derived-mode mustache-mode fundamental-mode "Mustache"
