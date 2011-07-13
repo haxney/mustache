@@ -77,15 +77,17 @@
   "The basic indentation offset.")
 
 ;; Constant regular expressions to identify template elements.
-(defconst mustache-mode-mustache-token "[[:alpha:]_./][[:alnum:]_:\?!./-]*")
+(defconst mustache-mode-mustache-token "[[:alpha:]_.][[:alnum:]_:\?!./-]*")
 (defconst mustache-mode-name-re "\\([[:alpha:]][[:alnum:].]*\\)")
 (defconst mustache-mode-argument-pair (concat mustache-mode-name-re "\\(?:=\\(\"[^\"]*\"\\)\\)?"))
 
 (defconst mustache-mode-section (concat "\\({{[#^/]\s*"
                                    mustache-mode-mustache-token
+                                   "\\(?:\s+" mustache-mode-argument-pair "\\)*"
                                    "\s*}}\\)"))
 (defconst mustache-mode-open-section (concat "\\({{#\s*"
                                         mustache-mode-mustache-token
+                                        "\\(?:\s+" mustache-mode-argument-pair "\\)*"
                                         "\s*}}\\)"))
 (defconst mustache-mode-close-section (concat "{{/\\(\s*"
                                          mustache-mode-mustache-token
@@ -97,6 +99,7 @@
                                    "\s*}}\\)"))
 (defconst mustache-mode-variable (concat "\\({{\s*"
                                     mustache-mode-mustache-token
+                                    "\\(?:\s+" mustache-mode-argument-pair "\\)*"
                                     "\s*}}\\)"))
 (defconst mustache-mode-builtins
   (concat
@@ -153,21 +156,22 @@
                                          "\\)[^/]*$"))
 
 (defconst mustache-mode-font-lock-keywords
-  `((,(concat "{{[#^/]?\s*" mustache-mode-mustache-token)
-     ,mustache-mode-argument-pair
-     (let* ((pos (point))
-            (limit (re-search-forward "}}"))
-            (end-pos (match-beginning 0)))
-       (goto-char pos)
-       end-pos)
-     "}}"
-     (1 font-lock-builtin-face)
-     (2 font-lock-string-face nil t))
+  `((,mustache-mode-variable (1 font-lock-reference-face))
     (,mustache-mode-section (1 font-lock-keyword-face))
     (,mustache-mode-comment (1 font-lock-comment-face))
     (,mustache-mode-include (1 font-lock-function-name-face))
     (,mustache-mode-builtins (1 font-lock-variable-name-face))
-    (,mustache-mode-variable (1 font-lock-reference-face))
+    (,(concat "{{\s*[#^/]?\s*" mustache-mode-mustache-token)
+     ,mustache-mode-argument-pair
+     (let* ((pos (point))
+            (limit (re-search-forward "}+"))
+            (end-pos (+ (match-beginning 0) 1)))
+       (goto-char pos)
+       end-pos)
+     "}}"
+     (1 font-lock-variable-name-face t)
+     (2 font-lock-string-face t t))
+
     (,(concat "</?\\(" mustache-mode-pair-tag "\\)") (1 font-lock-function-name-face))
     (,(concat "<\\(" mustache-mode-standalone-tag "\\)") (1 font-lock-function-name-face))
     (,mustache-mode-html-constant (1 font-lock-variable-name-face))))
